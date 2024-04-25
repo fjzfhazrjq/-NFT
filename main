@@ -1,0 +1,73 @@
+import asyncio
+from web3 import Web3
+from eth_account.signers.local import LocalAccount
+from loguru import logger
+
+# Импорт необходимых библиотек и модулей
+
+# Настройки подключения к сети Ethereum
+RPC_URL = "https://mainnet.infura.io/v3/your_infura_project_id"
+w3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+# Адрес контракта NFT
+NFT_CONTRACT_ADDRESS = "0x123abc..."
+
+# Адрес вашего кошелька
+YOUR_ADDRESS = "0x456def..."
+
+# Приватный ключ вашего кошелька (для подписи транзакций)
+YOUR_PRIVATE_KEY = "0xabcdef123456..."
+
+# Функция обработки претензий на NFT
+async def process_claims():
+    # Подписка на событие Claim
+    contract = w3.eth.contract(address=NFT_CONTRACT_ADDRESS, abi=YOUR_NFT_ABI)
+    claim_event_filter = contract.events.Claim.createFilter(fromBlock="latest")
+
+    while True:
+        # Ожидание новых событий претензий
+        for event in claim_event_filter.get_new_entries():
+            logger.info(f"New claim received: {event}")
+
+            # Извлечение необходимых данных из события
+            claimer_address = event["args"]["claimer"]
+            nft_id = event["args"]["nft_id"]
+            # Другие необходимые данные
+
+            # Проверка условий для обработки претензии
+            if check_conditions(claimer_address, nft_id):
+                # Вызов функции обработки претензии
+                await handle_claim(claimer_address, nft_id)
+            else:
+                logger.info("Claim conditions not met, skipping...")
+
+        # Пауза перед повторной проверкой
+        await asyncio.sleep(60)
+
+# Функция проверки условий для обработки претензии
+def check_conditions(claimer_address, nft_id):
+    # Ваша логика проверки условий
+    return True
+
+# Функция обработки претензии
+async def handle_claim(claimer_address, nft_id):
+    # Подготовка и отправка транзакции для обработки претензии
+    nonce = await w3.eth.get_transaction_count(YOUR_ADDRESS)
+    txn = {
+        "to": NFT_CONTRACT_ADDRESS,
+        "nonce": nonce,
+        # Другие необходимые параметры функции Claim
+        # Убедитесь, что данные параметры соответствуют ABI вашего контракта
+    }
+    signed_txn = w3.eth.account.sign_transaction(txn, YOUR_PRIVATE_KEY)
+    txn_hash = await w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    logger.info(f"Claim processed, transaction hash: {txn_hash.hex()}")
+
+# Главная функция скрипта
+async def main():
+    # Запуск функции обработки претензий в асинхронном режиме
+    await process_claims()
+
+# Запуск скрипта
+if __name__ == "__main__":
+    asyncio.run(main())
