@@ -71,3 +71,33 @@ async def main():
 # Запуск скрипта
 if __name__ == "__main__":
     asyncio.run(main())
+	async def process_claims(claim_queue: Queue):
+    while True:
+        claim = await claim_queue.get()
+        try:
+            # Обработка претензии
+            await asyncio.sleep(randint(1, 5))  # Пример задержки обработки
+            print(f"Processed claim: {claim}")
+        except Exception as e:
+            print(f"Error processing claim: {e}")
+            # Добавление претензии обратно в очередь для повторной обработки
+            await claim_queue.put(claim)
+        finally:
+            claim_queue.task_done()
+
+
+
+from slack_sdk import WebClient
+
+# Код для отправки уведомлений в Slack
+
+async def send_slack_notification(message: str):
+    client = WebClient(token="your_slack_token")
+    response = await client.chat_postMessage(channel="your_channel_id", text=message)
+    if not response["ok"]:
+        print(f"Failed to send Slack notification: {response['error']}")
+    else:
+        print("Slack notification sent successfully")
+
+# Вставьте этот вызов в нужное место вашего скрипта
+await send_slack_notification("Processed claim successfully")
